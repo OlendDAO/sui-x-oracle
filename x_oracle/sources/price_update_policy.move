@@ -10,6 +10,7 @@ module x_oracle::price_update_policy {
 
   const REQUIRE_ALL_RULES_FOLLOWED: u64 = 0;
   const REQUST_NOT_FOR_THIS_POLICY: u64 = 1;
+  const WRONG_POLICY_CAP: u64 = 2;
 
   struct PriceUpdateRequest<phantom T> {
     for: ID,
@@ -22,11 +23,21 @@ module x_oracle::price_update_policy {
     rules: VecSet<TypeName>,
   }
 
-  public fun new(ctx: &mut TxContext): PriceUpdatePolicy {
-    PriceUpdatePolicy {
+  struct PriceUpdatePolicyCap has key, store {
+    id: UID,
+    for: ID,
+  }
+
+  public fun new(ctx: &mut TxContext): (PriceUpdatePolicy, PriceUpdatePolicyCap) {
+    let policy = PriceUpdatePolicy {
       id: object::new(ctx),
       rules: vec_set::empty(),
-    }
+    };
+    let cap = PriceUpdatePolicyCap {
+      id: object::new(ctx),
+      for: object::id(&policy),
+    };
+    (policy, cap)
   }
 
   public fun new_request<T>(policy: &PriceUpdatePolicy): PriceUpdateRequest<T> {
@@ -37,7 +48,11 @@ module x_oracle::price_update_policy {
     }
   }
 
-  public fun add_rule<Rule>(policy: &PriceUpdatePolicy) {
+  public fun add_rule<Rule>(
+    policy: &PriceUpdatePolicy,
+    cap: &PriceUpdatePolicyCap,
+  ) {
+    assert!(object::id(policy) == cap.for, WRONG_POLICY_CAP);
     vec_set::insert(&mut policy.rules, type_name::get<Rule>());
   }
 

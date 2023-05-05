@@ -1,11 +1,11 @@
 module x_oracle::x_oracle {
   use std::vector;
   use std::type_name::{TypeName, get};
-  use sui::object::{Self, UID};
+  use sui::object::{Self, UID, ID};
   use sui::table::{Self, Table};
   use sui::tx_context::TxContext;
 
-  use x_oracle::price_update_policy::{Self, PriceUpdatePolicy, PriceUpdateRequest};
+  use x_oracle::price_update_policy::{Self, PriceUpdatePolicy, PriceUpdateRequest, PriceUpdatePolicyCap};
   use x_oracle::price_feed::{Self, PriceFeed};
 
   const PRIMARY_PRICE_NOT_QUALIFIED: u64 = 0;
@@ -18,31 +18,72 @@ module x_oracle::x_oracle {
     twap_prices: Table<TypeName, PriceFeed>,
   }
 
-  struct XOracleUpdateRequest<phantom T> {
+  struct XOraclePolicyCap has key, store {
+    id: UID,
+    primary_price_update_policy_cap: PriceUpdatePolicyCap,
+    secondary_price_update_policy_cap: PriceUpdatePolicyCap,
+  }
+
+  struct XOraclePriceUpdateRequest<phantom T> {
     primary_price_update_request: PriceUpdateRequest<T>,
     secondary_price_update_request: PriceUpdateRequest<T>,
   }
 
+  // === getters ===
+
   public fun prices(self: &XOracle): &Table<TypeName, PriceFeed> { &self.prices }
   public fun twap_prices(self: &XOracle): &Table<TypeName, PriceFeed> { &self.twap_prices }
 
-  public fun new(ctx: &mut TxContext): XOracle {
+  // === init ===
+
+  public fun new(ctx: &mut TxContext): (XOracle, XOraclePolicyCap) {
+    let (primary_price_update_policy, primary_price_update_policy_cap ) = price_update_policy::new(ctx);
+    let (secondary_price_update_policy, secondary_price_update_policy_cap ) = price_update_policy::new(ctx);
     let x_oracle = XOracle {
       id: object::new(ctx),
-      primary_price_update_policy: price_update_policy::new(ctx),
-      secondary_price_update_policy: price_update_policy::new(ctx),
+      primary_price_update_policy,
+      secondary_price_update_policy,
       prices: table::new(ctx),
       twap_prices: table::new(ctx),
     };
-    x_oracle
+    let x_oracle_update_policy = XOraclePolicyCap {
+      id: object::new(ctx),
+      primary_price_update_policy_cap,
+      secondary_price_update_policy_cap,
+    };
+    (x_oracle, x_oracle_update_policy)
   }
+
+  // === Price Update Policy ===
+
+  public fun add_primary_price_update_rule<Rule: drop>(
+    self: &mut XOracle,
+    cap: &XOraclePolicyCap,
+  ) {
+    price_update_policy::add_rule<Rule>(
+      &mut self.primary_price_update_policy,
+      &cap.primary_price_update_policy_cap
+    );
+  }
+
+  public fun add_secondary_price_update_rule<Rule: drop>(
+    self: &mut XOracle,
+    cap: &XOraclePolicyCap,
+  ) {
+    price_update_policy::add_rule<Rule>(
+      &mut self.secondary_price_update_policy,
+      &cap.secondary_price_update_policy_cap
+    );
+  }
+
+  // === Price Update ===
 
   public fun price_update_request<T>(
     self: &XOracle,
-  ): XOracleUpdateRequest<T> {
+  ): XOraclePriceUpdateRequest<T> {
     let primary_price_update_request = price_update_policy::new_request<T>(&self.primary_price_update_policy);
     let secondary_price_update_request = price_update_policy::new_request<T>(&self.secondary_price_update_policy);
-    XOracleUpdateRequest {
+    XOraclePriceUpdateRequest {
       primary_price_update_request,
       secondary_price_update_request,
     }
@@ -50,7 +91,7 @@ module x_oracle::x_oracle {
 
   public fun set_primary_price<T, Rule: drop>(
     rule: Rule,
-    request: XOracleUpdateRequest<T>,
+    request: XOraclePriceUpdateRequest<T>,
     price_feed: PriceFeed,
   ) {
     price_update_policy::add_price_feed(rule, &mut request.primary_price_update_request, price_feed);
@@ -58,7 +99,7 @@ module x_oracle::x_oracle {
 
   public fun set_secondary_price<T, Rule: drop>(
     rule: Rule,
-    request: XOracleUpdateRequest<T>,
+    request: XOraclePriceUpdateRequest<T>,
     price_feed: PriceFeed,
   ) {
     price_update_policy::add_price_feed(rule, &mut request.secondary_price_update_request, price_feed);
@@ -66,7 +107,7 @@ module x_oracle::x_oracle {
 
   public fun confirm_price_update_request<T>(
     self: &mut XOracle,
-    request: XOracleUpdateRequest<T>
+    request: XOraclePriceUpdateRequest<T>
   ) {
     let primary_price_feeds = price_update_policy::confirm_request(
       request.primary_price_update_request,
