@@ -1,5 +1,5 @@
 [package]
-name = "Sample"
+name = "SupraRule"
 version = "0.0.1"
 
 [dependencies.Sui]
@@ -10,14 +10,5 @@ rev = "testnet"
 [dependencies.XOracle]
 local = "../x_oracle"
 
-[dependencies.SwitchboardRule]
-local = "../switchboard_rule"
-
-[dependencies.PythRule]
-local = "../pyth_rule"
-
-[dependencies.SupraRule]
-local = "../supra_rule"
-
 [addresses]
-sample = "0x0"
+supra_rule = "0x0"

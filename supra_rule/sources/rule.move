@@ -1,4 +1,4 @@
-module switchboard_rule::switchboard_rule {
+module supra_rule::rule {
 
   use x_oracle::x_oracle::{ Self, XOraclePriceUpdateRequest };
   use x_oracle::price_feed;
