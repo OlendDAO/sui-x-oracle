@@ -1,4 +1,5 @@
 module x_oracle::x_oracle {
+  use std::vector;
   use std::type_name::{TypeName, get};
   use sui::object::{Self, UID};
   use sui::table::{Self, Table};
@@ -6,8 +7,6 @@ module x_oracle::x_oracle {
 
   use x_oracle::price_update_policy::{Self, PriceUpdatePolicy, PriceUpdateRequest};
   use x_oracle::price_feed::{Self, PriceFeed};
-  use std::vector;
-  use sui::math;
 
   const PRIMARY_PRICE_NOT_QUALIFIED: u64 = 0;
 
@@ -118,16 +117,13 @@ module x_oracle::x_oracle {
     price_feed2: PriceFeed,
   ): bool {
     let value1 = price_feed::value(&price_feed1);
-    let decimals1 = price_feed::decimals(&price_feed1);
     let value2 = price_feed::value(&price_feed2);
-    let decimals2 = price_feed::decimals(&price_feed2);
-    let diff = if (decimals2 > decimals1) {
-      (math::pow(10, decimals2 - decimals1 + 2) as u128) * value1 / value2
-    } else {
-      (math::pow(10, decimals1 - decimals2 + 2) as u128) * value2 / value1
-    };
-    let reasonable_diff = 1;
-    diff <= 100 + reasonable_diff && diff >= 100 - reasonable_diff
+
+    let scale = 1000;
+    let reasonable_diff_percent = 1;
+    let reasonable_diff = reasonable_diff_percent * scale / 100;
+    let diff = value1 * scale / value2;
+    diff <= scale + reasonable_diff && diff >= scale - reasonable_diff
   }
 
   // TODO: implement this
