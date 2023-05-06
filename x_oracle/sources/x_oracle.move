@@ -1,7 +1,7 @@
 module x_oracle::x_oracle {
   use std::vector;
   use std::type_name::{TypeName, get};
-  use sui::object::{Self, UID, ID};
+  use sui::object::{Self, UID};
   use sui::table::{Self, Table};
   use sui::tx_context::TxContext;
 
@@ -15,7 +15,6 @@ module x_oracle::x_oracle {
     primary_price_update_policy: PriceUpdatePolicy,
     secondary_price_update_policy: PriceUpdatePolicy,
     prices: Table<TypeName, PriceFeed>,
-    twap_prices: Table<TypeName, PriceFeed>,
   }
 
   struct XOraclePolicyCap has key, store {
@@ -32,7 +31,6 @@ module x_oracle::x_oracle {
   // === getters ===
 
   public fun prices(self: &XOracle): &Table<TypeName, PriceFeed> { &self.prices }
-  public fun twap_prices(self: &XOracle): &Table<TypeName, PriceFeed> { &self.twap_prices }
 
   // === init ===
 
@@ -44,7 +42,6 @@ module x_oracle::x_oracle {
       primary_price_update_policy,
       secondary_price_update_policy,
       prices: table::new(ctx),
-      twap_prices: table::new(ctx),
     };
     let x_oracle_update_policy = XOraclePolicyCap {
       id: object::new(ctx),
@@ -91,7 +88,7 @@ module x_oracle::x_oracle {
 
   public fun set_primary_price<T, Rule: drop>(
     rule: Rule,
-    request: XOraclePriceUpdateRequest<T>,
+    request: &mut XOraclePriceUpdateRequest<T>,
     price_feed: PriceFeed,
   ) {
     price_update_policy::add_price_feed(rule, &mut request.primary_price_update_request, price_feed);
@@ -99,7 +96,7 @@ module x_oracle::x_oracle {
 
   public fun set_secondary_price<T, Rule: drop>(
     rule: Rule,
-    request: XOraclePriceUpdateRequest<T>,
+    request: &mut XOraclePriceUpdateRequest<T>,
     price_feed: PriceFeed,
   ) {
     price_update_policy::add_price_feed(rule, &mut request.secondary_price_update_request, price_feed);
@@ -109,21 +106,18 @@ module x_oracle::x_oracle {
     self: &mut XOracle,
     request: XOraclePriceUpdateRequest<T>
   ) {
+    let XOraclePriceUpdateRequest { primary_price_update_request, secondary_price_update_request  } = request;
     let primary_price_feeds = price_update_policy::confirm_request(
-      request.primary_price_update_request,
+      primary_price_update_request,
       &self.primary_price_update_policy
     );
     let secondary_price_feeds = price_update_policy::confirm_request(
-      request.secondary_price_update_request,
+      secondary_price_update_request,
       &self.secondary_price_update_policy
     );
     let current_price_feed = table::borrow_mut(&mut self.prices, get<T>());
     let price_feed = determine_price(primary_price_feeds, secondary_price_feeds);
     *current_price_feed = price_feed;
-
-    let current_twap_price_feed = table::borrow_mut(&mut self.twap_prices, get<T>());
-    let twap_price_feed = determine_twap_price(*current_twap_price_feed, price_feed);
-    *current_twap_price_feed = twap_price_feed;
   }
 
   fun determine_price(
@@ -165,13 +159,5 @@ module x_oracle::x_oracle {
     let reasonable_diff = reasonable_diff_percent * scale / 100;
     let diff = value1 * scale / value2;
     diff <= scale + reasonable_diff && diff >= scale - reasonable_diff
-  }
-
-  // TODO: implement this
-  fun determine_twap_price(
-    prev_twap_price_feed: PriceFeed,
-    new_price_feed: PriceFeed,
-  ): PriceFeed {
-    return new_price_feed
   }
 }

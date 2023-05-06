@@ -1,4 +1,4 @@
-module pyth_rule::rule {
+module test_pyth::test_pyth {
 
   use std::vector;
   use sui::coin::Coin;
@@ -11,26 +11,29 @@ module pyth_rule::rule {
   use pyth::state::{State as PythState};
   use pyth::price_info::{PriceInfoObject};
   use pyth::hot_potato_vector;
-  use wormhole::state::{State as WormholeState};
   use wormhole::vaa;
-
-  use x_oracle::x_oracle::{ Self, XOraclePriceUpdateRequest };
-  use x_oracle::price_feed;
+  use wormhole::state::{State as WormholeState};
+  use sui::event;
 
   const U8_MAX: u64 = 255;
 
   const PYTH_PRICE_DECIMALS_TOO_LARGE: u64 = 0;
 
-  struct Rule has drop {}
+  struct PythPriceEvent has copy, drop {
+    price_value: u64,
+    price_conf: u64,
+    price_decimals: u8,
+    price_updated_time: u64,
+  }
 
-  public fun get_pyth_price(
+  public entry fun get_pyth_price(
     wormhole_state: &WormholeState,
     pyth_state: &PythState,
     pyth_price_info_object: &mut PriceInfoObject,
     pyth_update_fee: Coin<SUI>,
     vaa_buf: vector<u8>,
     clock: &Clock,
-  ): (u64, u64, u8, u64) {
+  ) {
     let vaa = vaa::parse_and_verify(wormhole_state, vaa_buf, clock);
     let vaa_vec = vector::singleton(vaa);
     let pyth_price_hot_potato = pyth::create_price_infos_hot_potato(pyth_state, vaa_vec, clock);
@@ -48,21 +51,15 @@ module pyth_rule::rule {
     let price_value = i64::get_magnitude_if_positive(&price_value);
     let price_conf = price::get_conf(&pyth_price);
     let price_decimals = price::get_expo(&pyth_price);
-    let price_decimals = i64::get_magnitude_if_positive(&price_decimals);
+    let price_decimals = i64::get_magnitude_if_negative(&price_decimals);
     // For price value, the decimals could definitely fit in a u8, otherwise there's a bug
     assert!(price_decimals <= U8_MAX, PYTH_PRICE_DECIMALS_TOO_LARGE);
     let price_decimals = (price_decimals as u8);
-    (price_value, price_conf, price_decimals, price_updated_time)
-  }
-
-  public fun set_price<T>(
-    request: &mut XOraclePriceUpdateRequest<T>,
-    pyth_state: &PythState,
-    price: u64,
-    last_updated: u64,
-  ) {
-    let price_feed = price_feed::new(price, last_updated);
-    pyth::get_stale_price_threshold_secs(pyth_state);
-    x_oracle::set_secondary_price(Rule {}, request, price_feed);
+    event::emit(PythPriceEvent {
+      price_value,
+      price_conf,
+      price_decimals,
+      price_updated_time,
+    });
   }
 }

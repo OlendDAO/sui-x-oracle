@@ -1,5 +1,5 @@
 [package]
-name = "PythRule"
+name = "TestPyth"
 version = "0.0.1"
 
 [dependencies.Sui]
@@ -15,18 +15,10 @@ rev = "mainnet"
 override = true
 
 [dependencies.Pyth]
-local = "../../pyth-crosschain/target_chains/sui/contracts"
+local = "./vendors/pyth"
 #git = "https://github.com/pyth-network/pyth-crosschain.git"
 #subdir = "target_chains/sui/contracts"
 #rev = "sui/hot_potato"
 
-[dependencies.SwitchboardStdLib]
-git = "https://github.com/switchboard-xyz/sbv2-sui.git"
-subdir = "move/mainnet/switchboard_std"
-rev = "main"
-
-[dependencies.XOracle]
-local = "../x_oracle"
-
 [addresses]
-pyth_rule = "0x0"
+test_pyth = "0x0"

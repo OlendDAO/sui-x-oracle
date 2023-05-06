@@ -49,7 +49,7 @@ module x_oracle::price_update_policy {
   }
 
   public fun add_rule<Rule>(
-    policy: &PriceUpdatePolicy,
+    policy: &mut PriceUpdatePolicy,
     cap: &PriceUpdatePolicyCap,
   ) {
     assert!(object::id(policy) == cap.for, WRONG_POLICY_CAP);
