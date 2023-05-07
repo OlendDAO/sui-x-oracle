@@ -1,36 +1,39 @@
 module switchboard_rule::rule {
 
-  use std::type_name;
-  use x_oracle::x_oracle::{ Self, XOraclePriceUpdateRequest };
+  use sui::math;
+  use switchboard_std::aggregator::Aggregator;
+
+  use x_oracle::x_oracle::{Self, XOraclePriceUpdateRequest};
   use x_oracle::price_feed;
-  use switchboard_std::aggregator::{Self, Aggregator};
-  use switchboard_std::math as switchboard_math;
+
+  use switchboard_rule::switchboard_adaptor;
   use switchboard_rule::switchboard_registry::{Self, SwitchboardRegistry};
+
+  const U64_MAX: u128 = 18446744073709551615;
+
+  const ERR_BAD_SWITCHBOARD_PRICE: u64 = 0;
 
   struct Rule has drop {}
 
-  public fun set_price<T>(
-    request: XOraclePriceUpdateRequest<T>,
-    price: u64,
-    last_updated: u64,
-  ) {
-    let price_feed = price_feed::new(price, last_updated);
-    x_oracle::set_secondary_price(Rule {}, request, price_feed);
-  }
-
-  fun get_price_from_aggregator<CoinType>(
+  public fun set_price<CoinType>(
+    request: &mut XOraclePriceUpdateRequest<CoinType>,
     aggregator: &Aggregator,
-    registry: &SwitchboardRegistry,
+    switchboard_registry: &SwitchboardRegistry,
   ) {
-    let coin_type = type_name::get<CoinType>();
-    switchboard_registry::assert_aggregator(registry, coin_type, aggregator);
-    let (price, timestamp) = aggregator::latest_value(aggregator);
+    // Make sure the aggregator is registered in the switchboard registry for the coin type
+    switchboard_registry::assert_switchboard_aggregator<CoinType>(switchboard_registry, aggregator);
 
-    let (result, scale_factor, negative) = switchboard_math::unpack(price);
-    // TODO: check the negative flag, how to handle negative price?
-    assert!(negative == false, SWITCHBOARD_PRICE_ERROR);
+    let (price_value, price_decimals, updated_time) = switchboard_adaptor::get_switchboard_price(aggregator);
 
-    let price_scale = result * (math::pow(10, PRICE_PRECISION) as u128) / (math::pow(10, scale_factor) as u128);
-    assert!(price_scale <= U64_MAX, SWITCHBOARD_PRICE_ERROR);
+    let formatted_decimals: u8 = price_feed::decimals();
+    let price_value_formatted = if (price_decimals < formatted_decimals) {
+      price_value * (math::pow(10, formatted_decimals - price_decimals) as u128)
+    } else {
+      price_value / (math::pow(10, price_decimals - formatted_decimals) as u128)
+    };
+    assert!(price_value_formatted > 0 && price_value_formatted < U64_MAX, ERR_BAD_SWITCHBOARD_PRICE);
+    let price_value_formatted = (price_value_formatted as u64);
+    let price_feed = price_feed::new(price_value_formatted, updated_time);
+    x_oracle::set_secondary_price(Rule {}, request, price_feed);
   }
 }

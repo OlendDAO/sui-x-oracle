@@ -13,7 +13,10 @@ const pythPriceId = 'f9c0172ba10dfa4d19088d94f5bf61d3b54d5bd7483a322a982e1373ee8
 
 (async () => {
 
+  const vaaStart = Math.floor(Date.now() / 1000);
   const [vaa] = await getVaas([pythPriceId]);
+  const vaaEnd = Math.floor(Date.now() / 1000);
+  console.log(`getVaas took ${vaaEnd - vaaStart} seconds`);
 
   const suiTxBlock = new SuiTxBlock();
   let [fee] = suiTxBlock.splitSUIFromGas([1]);
@@ -28,8 +31,23 @@ const pythPriceId = 'f9c0172ba10dfa4d19088d94f5bf61d3b54d5bd7483a322a982e1373ee8
       SUI_CLOCK_OBJECT_ID
     ]
   );
-  suiTxBlock.txBlock.setGasBudget(10 ** 9);
-  const res: any = await suiKit.signAndSendTxn(suiTxBlock);
+  suiTxBlock.txBlock.setGasBudget(10 ** 8);
+  suiTxBlock.txBlock.setSender(suiKit.currentAddress());
+  const buildTx = await suiTxBlock.txBlock.build({
+    provider: suiKit.provider(),
+  });
+  let start = Math.floor(Date.now() / 1000);
+  const res = await suiKit.getSigner().signAndExecuteTransactionBlock({
+    transactionBlock: buildTx,
+    options: {
+      showEffects: true,
+      showEvents: true
+    }
+  })
   console.log(res)
-  console.log(res.events[1])
+  let end = Math.floor(Date.now() / 1000);
+  console.log(`Time elapsed: ${end - start} seconds`);
+
+  // const res: any = await suiKit.signAndSendTxn(suiTxBlock);
+  // console.log(res.events[1])
 })();

@@ -6,9 +6,16 @@ version = "0.0.1"
 git = "https://github.com/MystenLabs/sui.git"
 subdir = "crates/sui-framework/packages/sui-framework"
 rev = "mainnet"
+override = true
+
+[dependencies.MoveStdlib]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/move-stdlib"
+rev = "mainnet"
+override = true
 
 [dependencies.SwitchboardStdLib]
-local = "../switchboard_std"
+local = "./vendors/switchboard_std"
 
 [dependencies.XOracle]
 local = "../x_oracle"

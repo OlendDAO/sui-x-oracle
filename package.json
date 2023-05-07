@@ -1,0 +1,21 @@
+{
+  "name": "sui-x-oracle",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mysten/sui.js": "^0.33.0",
+    "@pythnetwork/price-service-client": "^1.4.1",
+    "@scallop-io/sui-kit": "^0.33.1",
+    "@scallop-io/sui-package-kit": "^0.33.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3"
+  }
+}

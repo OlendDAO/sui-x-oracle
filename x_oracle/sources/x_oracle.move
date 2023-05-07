@@ -15,6 +15,7 @@ module x_oracle::x_oracle {
     primary_price_update_policy: PriceUpdatePolicy,
     secondary_price_update_policy: PriceUpdatePolicy,
     prices: Table<TypeName, PriceFeed>,
+    ema_prices: Table<TypeName, PriceFeed>,
   }
 
   struct XOraclePolicyCap has key, store {
@@ -42,6 +43,7 @@ module x_oracle::x_oracle {
       primary_price_update_policy,
       secondary_price_update_policy,
       prices: table::new(ctx),
+      ema_prices: table::new(ctx),
     };
     let x_oracle_update_policy = XOraclePolicyCap {
       id: object::new(ctx),

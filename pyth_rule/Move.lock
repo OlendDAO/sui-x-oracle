@@ -7,6 +7,7 @@ dependencies = [
   { name = "MoveStdlib" },
   { name = "Pyth" },
   { name = "Sui" },
+  { name = "XOracle" },
 ]
 
 [[move.package]]
@@ -33,6 +34,14 @@ dependencies = [
 [[move.package]]
 name = "Wormhole"
 source = { local = "vendors/wormhole" }
+
+dependencies = [
+  { name = "Sui" },
+]
+
+[[move.package]]
+name = "XOracle"
+source = { local = "../x_oracle" }
 
 dependencies = [
   { name = "Sui" },

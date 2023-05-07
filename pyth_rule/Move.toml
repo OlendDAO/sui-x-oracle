@@ -15,15 +15,7 @@ rev = "mainnet"
 override = true
 
 [dependencies.Pyth]
-local = "../../pyth-crosschain/target_chains/sui/contracts"
-#git = "https://github.com/pyth-network/pyth-crosschain.git"
-#subdir = "target_chains/sui/contracts"
-#rev = "sui/hot_potato"
-
-[dependencies.SwitchboardStdLib]
-git = "https://github.com/switchboard-xyz/sbv2-sui.git"
-subdir = "move/mainnet/switchboard_std"
-rev = "main"
+local = "./vendors/pyth"
 
 [dependencies.XOracle]
 local = "../x_oracle"
