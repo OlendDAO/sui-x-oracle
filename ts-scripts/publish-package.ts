@@ -13,6 +13,5 @@ const publishPackage = async (pkgPath: string) => {
   });
 }
 
-const pkgPath = path.join(__dirname, "../pyth_rule");
+const pkgPath = path.join(__dirname, "../switchboard_rule");
 publishPackage(pkgPath).then(console.log).catch(console.error);
-
