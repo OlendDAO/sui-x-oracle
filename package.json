@@ -4,18 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "publish-package": "ts-node ts-scripts/publish-package.ts",
+    "get-price": "ts-node pyth_rule/scripts/get-price.ts",
+    "deploy": "ts-node ts-scripts/deploy.ts",
+    "deploy:xoracle": "ts-node ts-scripts/publish-x-oracle.ts",
+    "deploy:pyth": "ts-node ts-scripts/publish-package.ts",
+    "check-deployment": "ts-node ts-scripts/check-deployment.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@mysten/sui.js": "^0.33.0",
-    "@pythnetwork/price-service-client": "^1.4.1",
-    "@scallop-io/sui-kit": "^0.33.1",
-    "@scallop-io/sui-package-kit": "^0.33.0"
+    "@mysten/sui": "^1.24.0",
+    "@pythnetwork/hermes-client": "^2.0.0"
   },
   "devDependencies": {
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.4.7",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   }
 }

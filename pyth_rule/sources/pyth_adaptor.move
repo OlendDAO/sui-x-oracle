@@ -1,6 +1,6 @@
 module pyth_rule::pyth_adaptor {
 
-  use std::vector;
+  // 移除不必要的别名
   use sui::coin::Coin;
   use sui::sui::SUI;
   use sui::clock::Clock;

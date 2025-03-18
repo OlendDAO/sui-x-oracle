@@ -1,25 +1,35 @@
 [package]
 name = "PythRule"
 version = "0.0.1"
-published-at = "0x2a96b2c44cb45880e0771e45ec1eb55481179ee572ef525f44e2670dcd94111a"
+edition = "2024"
 
 [dependencies.Sui]
 git = "https://github.com/MystenLabs/sui.git"
 subdir = "crates/sui-framework/packages/sui-framework"
-rev = "mainnet"
+rev = "041c5f2bae2fe52079e44b70514333532d69f4e6"
 override = true
 
 [dependencies.MoveStdlib]
 git = "https://github.com/MystenLabs/sui.git"
 subdir = "crates/sui-framework/packages/move-stdlib"
-rev = "mainnet"
+rev = "041c5f2bae2fe52079e44b70514333532d69f4e6"
 override = true
 
 [dependencies.Pyth]
-local = "./vendors/pyth"
+git = "https://github.com/pyth-network/pyth-crosschain.git"
+subdir = "target_chains/sui/contracts"
+rev = "sui-contract-testnet"
 
-[dependencies.XOracle]
+[dependencies.Wormhole]
+git = "https://github.com/wormhole-foundation/wormhole.git"
+subdir = "sui/wormhole"
+rev = "sui-upgrade-testnet"
+
+[dependencies.X_oracle]
 local = "../x_oracle"
 
 [addresses]
-pyth_rule = "0x2a96b2c44cb45880e0771e45ec1eb55481179ee572ef525f44e2670dcd94111a"
+pyth_rule = "0x0"
+x_oracle_new = "0xb81ea3e55d7863e19879c2b5ebe494df1a33cb40f7b288955ff2989af2e77bc8"
+pyth = "0xabf837e98c26087cba0883c0a7a28326b1fa3c5e1e2c5abdb486f9e8f594c837"
+wormhole = "0xf47329f4344f3bf0f8e436e2f7b485466cff300f12a166563995d3888c296a94"

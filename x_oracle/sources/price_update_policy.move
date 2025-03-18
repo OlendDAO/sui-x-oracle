@@ -1,31 +1,31 @@
-module x_oracle::price_update_policy {
+module x_oracle_v2::price_update_policy {
 
   use std::type_name::{Self, TypeName};
-  use std::vector;
-  use sui::vec_set::{Self, VecSet};
-  use sui::object::{Self, UID, ID};
+  use std::vector::{Self as vector};
+  use sui::object::{Self, ID, UID};
   use sui::tx_context::TxContext;
+  use sui::vec_set::{Self, VecSet};
 
-  use x_oracle::price_feed::PriceFeed;
+  use x_oracle_v2::price_feed::PriceFeed;
 
   const REQUIRE_ALL_RULES_FOLLOWED: u64 = 0;
   const REQUST_NOT_FOR_THIS_POLICY: u64 = 1;
   const WRONG_POLICY_CAP: u64 = 2;
 
-  struct PriceUpdateRequest<phantom T> {
-    for: ID,
+  public struct PriceUpdateRequest<phantom T> {
+    for_policy: ID,
     receipts: VecSet<TypeName>,
     price_feeds: vector<PriceFeed>,
   }
 
-  struct PriceUpdatePolicy has key, store {
+  public struct PriceUpdatePolicy has key, store {
     id: UID,
     rules: VecSet<TypeName>,
   }
 
-  struct PriceUpdatePolicyCap has key, store {
+  public struct PriceUpdatePolicyCap has key, store {
     id: UID,
-    for: ID,
+    for_policy: ID,
   }
 
   public fun new(ctx: &mut TxContext): (PriceUpdatePolicy, PriceUpdatePolicyCap) {
@@ -35,14 +35,14 @@ module x_oracle::price_update_policy {
     };
     let cap = PriceUpdatePolicyCap {
       id: object::new(ctx),
-      for: object::id(&policy),
+      for_policy: object::id(&policy),
     };
     (policy, cap)
   }
 
   public fun new_request<T>(policy: &PriceUpdatePolicy): PriceUpdateRequest<T> {
     PriceUpdateRequest {
-      for: object::id(policy),
+      for_policy: object::id(policy),
       receipts: vec_set::empty(),
       price_feeds: vector::empty(),
     }
@@ -52,7 +52,7 @@ module x_oracle::price_update_policy {
     policy: &mut PriceUpdatePolicy,
     cap: &PriceUpdatePolicyCap,
   ) {
-    assert!(object::id(policy) == cap.for, WRONG_POLICY_CAP);
+    assert!(object::id(policy) == cap.for_policy, WRONG_POLICY_CAP);
     vec_set::insert(&mut policy.rules, type_name::get<Rule>());
   }
 
@@ -66,13 +66,13 @@ module x_oracle::price_update_policy {
   }
 
   public fun confirm_request<CoinType>(request: PriceUpdateRequest<CoinType>, policy: &PriceUpdatePolicy): vector<PriceFeed> {
-    let PriceUpdateRequest { receipts, for, price_feeds } = request;
-    assert!(for == object::id(policy), REQUST_NOT_FOR_THIS_POLICY);
+    let PriceUpdateRequest { receipts, for_policy, price_feeds } = request;
+    assert!(for_policy == object::id(policy), REQUST_NOT_FOR_THIS_POLICY);
 
-    let receipts = vec_set::into_keys(receipts);
+    let mut receipts = vec_set::into_keys(receipts);
     let completed = vector::length(&receipts);
     assert!(completed == vec_set::size(&policy.rules), REQUIRE_ALL_RULES_FOLLOWED);
-    let i = 0;
+    let mut i = 0;
     while(i < completed) {
       let receipt = vector::pop_back(&mut receipts);
       assert!(vec_set::contains(&policy.rules, &receipt), REQUIRE_ALL_RULES_FOLLOWED);

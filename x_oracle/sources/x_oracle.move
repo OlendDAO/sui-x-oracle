@@ -1,16 +1,16 @@
-module x_oracle::x_oracle {
-  use std::vector;
+module x_oracle_v2::x_oracle {
   use std::type_name::{TypeName, get};
+  use std::vector;
   use sui::object::{Self, UID};
-  use sui::table::{Self, Table};
   use sui::tx_context::TxContext;
+  use sui::table::{Self, Table};
 
-  use x_oracle::price_update_policy::{Self, PriceUpdatePolicy, PriceUpdateRequest, PriceUpdatePolicyCap};
-  use x_oracle::price_feed::{Self, PriceFeed};
+  use x_oracle_v2::price_update_policy::{Self, PriceUpdatePolicy, PriceUpdateRequest, PriceUpdatePolicyCap};
+  use x_oracle_v2::price_feed::{Self, PriceFeed};
 
   const PRIMARY_PRICE_NOT_QUALIFIED: u64 = 0;
 
-  struct XOracle has key {
+  public struct XOracle has key {
     id: UID,
     primary_price_update_policy: PriceUpdatePolicy,
     secondary_price_update_policy: PriceUpdatePolicy,
@@ -18,13 +18,13 @@ module x_oracle::x_oracle {
     ema_prices: Table<TypeName, PriceFeed>,
   }
 
-  struct XOraclePolicyCap has key, store {
+  public struct XOraclePolicyCap has key, store {
     id: UID,
     primary_price_update_policy_cap: PriceUpdatePolicyCap,
     secondary_price_update_policy_cap: PriceUpdatePolicyCap,
   }
 
-  struct XOraclePriceUpdateRequest<phantom T> {
+  public struct XOraclePriceUpdateRequest<phantom T> {
     primary_price_update_request: PriceUpdateRequest<T>,
     secondary_price_update_request: PriceUpdateRequest<T>,
   }
@@ -123,8 +123,8 @@ module x_oracle::x_oracle {
   }
 
   fun determine_price(
-    primary_price_feeds: vector<PriceFeed>,
-    secondary_price_feeds: vector<PriceFeed>,
+    mut primary_price_feeds: vector<PriceFeed>,
+    mut secondary_price_feeds: vector<PriceFeed>,
   ): PriceFeed {
     // current we only have one primary price feed
     let primary_price_feed = vector::pop_back(&mut primary_price_feeds);
@@ -132,12 +132,12 @@ module x_oracle::x_oracle {
 
     // We require the primary price feed to be confirmed by at least half of the secondary price feeds
     let required_secondary_match_num = (secondary_price_feed_num + 1) / 2;
-    let matched: u64 = 0;
-    let i = 0;
+    let mut matched: u64 = 0;
+    let mut i = 0;
     while (i < secondary_price_feed_num) {
       let secondary_price_feed = vector::pop_back(&mut secondary_price_feeds);
       if (price_feed_match(primary_price_feed, secondary_price_feed)) {
-        matched == matched + 1;
+        matched = matched + 1;
       };
       i = i + 1;
     };

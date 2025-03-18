@@ -1,9 +1,9 @@
-module x_oracle::price_feed {
+module x_oracle_v2::price_feed {
 
   // We fix the number of price decimals to 9
   const PRICE_DECIMALS: u8 = 9;
 
-  struct PriceFeed has store, copy, drop {
+  public struct PriceFeed has store, copy, drop {
     value: u64,
     last_updated: u64,
   }

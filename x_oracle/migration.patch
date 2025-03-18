@@ -1,0 +1,12 @@
+--- ./sources/price_update_policy.move
++++ ./sources/price_update_policy.move
+@@ -72 +72 @@
+-    let receipts = vec_set::into_keys(receipts);
++    let mut receipts = vec_set::into_keys(receipts);
+--- ./sources/x_oracle.move
++++ ./sources/x_oracle.move
+@@ -126,2 +126,2 @@
+-    primary_price_feeds: vector<PriceFeed>,
+-    secondary_price_feeds: vector<PriceFeed>,
++    mut primary_price_feeds: vector<PriceFeed>,
++    mut secondary_price_feeds: vector<PriceFeed>,

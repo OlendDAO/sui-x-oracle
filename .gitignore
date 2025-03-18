@@ -43,3 +43,9 @@ next-env.d.ts
 # generate files
 object-ids.json
 object-ids.*.json
+
+# exclude specific directories
+/price_client/
+/ts-scripts/
+/docs
+/dist

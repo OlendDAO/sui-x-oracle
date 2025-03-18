@@ -1,6 +1,6 @@
-import { SUI_CLOCK_OBJECT_ID } from "@mysten/sui.js"
-import { SuiTxBlock } from "@scallop-io/sui-kit"
-import { suiKit } from "../../ts-scripts/sui-kit"
+import { SUI_CLOCK_OBJECT_ID } from "@mysten/sui/utils"
+import { Transaction } from "@mysten/sui/transactions"
+import { suiClient, keypair } from "../../ts-scripts/sui-kit"
 import { getVaas } from "./get-vaas"
 
 const pkgId = '0x011dc5ab7c7172c991d5d39978cb3c31b84dcb926fd2401a094992b65adae94d';
@@ -18,33 +18,37 @@ const pythPriceId = 'f9c0172ba10dfa4d19088d94f5bf61d3b54d5bd7483a322a982e1373ee8
   const vaaEnd = Math.floor(Date.now() / 1000);
   console.log(`getVaas took ${vaaEnd - vaaStart} seconds`);
 
-  const suiTxBlock = new SuiTxBlock();
-  let [fee] = suiTxBlock.splitSUIFromGas([1]);
-  suiTxBlock.moveCall(
-    `${pkgId}::test_pyth::get_pyth_price`,
-    [
-      warmholeStateId,
-      pythStateId,
-      pythPriceInfoObjectId,
-      fee,
-      suiTxBlock.pure([...Buffer.from(vaa, "base64")]),
-      SUI_CLOCK_OBJECT_ID
+  const tx = new Transaction();
+  // 分割 SUI 代币作为手续费
+  const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(1)]);
+  
+  // 调用 Move 函数
+  tx.moveCall({
+    target: `${pkgId}::test_pyth::get_pyth_price`,
+    arguments: [
+      tx.object(warmholeStateId),
+      tx.object(pythStateId),
+      tx.object(pythPriceInfoObjectId),
+      coin,
+      tx.pure(new Uint8Array(Buffer.from(vaa, "base64"))),
+      tx.object(SUI_CLOCK_OBJECT_ID)
     ]
-  );
-  suiTxBlock.txBlock.setGasBudget(10 ** 8);
-  suiTxBlock.txBlock.setSender(suiKit.currentAddress());
-  const buildTx = await suiTxBlock.txBlock.build({
-    provider: suiKit.provider(),
   });
+  
+  // 设置 Gas 预算
+  tx.setGasBudget(10 ** 8);
+  
   let start = Math.floor(Date.now() / 1000);
-  const res = await suiKit.getSigner().signAndExecuteTransactionBlock({
-    transactionBlock: buildTx,
+  const res = await suiClient.signAndExecuteTransaction({
+    transaction: tx,
+    signer: keypair,
+    requestType: "WaitForLocalExecution",
     options: {
       showEffects: true,
-      showEvents: true
-    }
-  })
-  console.log(res)
+      showEvents: true,
+    },
+  });
+  console.log(res);
   let end = Math.floor(Date.now() / 1000);
   console.log(`Time elapsed: ${end - start} seconds`);
 

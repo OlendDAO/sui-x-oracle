@@ -9,17 +9,17 @@ module pyth_rule::rule {
   use pyth::price_info::PriceInfoObject;
   use wormhole::state::State as WormholeState;
 
-  use x_oracle::x_oracle::{ Self, XOraclePriceUpdateRequest };
-  use x_oracle::price_feed;
+  use x_oracle_new::x_oracle::{ Self, XOraclePriceUpdateRequest };
+  use x_oracle_new::price_feed;
 
   use pyth_rule::pyth_adaptor;
   use pyth_rule::pyth_registry::{Self, PythRegistry};
 
-  const U8_MAX: u64 = 255;
+  // 移除未使用的常量
 
   const PYTH_PRICE_DECIMALS_TOO_LARGE: u64 = 0;
 
-  struct Rule has drop {}
+  public struct Rule has drop {}
 
 
   public fun set_price<CoinType>(
@@ -45,10 +45,10 @@ module pyth_rule::rule {
     );
     let formatted_decimals = price_feed::decimals();
     let price_value_with_formatted_decimals = if (price_decimals < formatted_decimals) {
-      price_value * math::pow(10, formatted_decimals - price_decimals)
+      price_value * math::pow(10u64, (formatted_decimals - price_decimals) as u8)
     } else {
       // This should rarely happen, since formatted_decimals is 9 and price_decimals is usually smaller than 8
-      price_value / math::pow(10, price_decimals - formatted_decimals)
+      price_value / math::pow(10u64, (price_decimals - formatted_decimals) as u8)
     };
     assert!(price_value > 0, PYTH_PRICE_DECIMALS_TOO_LARGE);
     let price_feed = price_feed::new(price_value_with_formatted_decimals, updated_time);

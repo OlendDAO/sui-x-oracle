@@ -1,7 +1,7 @@
 module switchboard_rule::rule {
 
-  use sui::math;
-  use switchboard_std::aggregator::Aggregator;
+  use std::u64;
+  use switchboard::aggregator::Aggregator;
 
   use x_oracle::x_oracle::{Self, XOraclePriceUpdateRequest};
   use x_oracle::price_feed;
@@ -13,7 +13,7 @@ module switchboard_rule::rule {
 
   const ERR_BAD_SWITCHBOARD_PRICE: u64 = 0;
 
-  struct Rule has drop {}
+  public struct Rule has drop {}
 
   public fun set_price<CoinType>(
     request: &mut XOraclePriceUpdateRequest<CoinType>,
@@ -27,9 +27,9 @@ module switchboard_rule::rule {
 
     let formatted_decimals: u8 = price_feed::decimals();
     let price_value_formatted = if (price_decimals < formatted_decimals) {
-      price_value * (math::pow(10, formatted_decimals - price_decimals) as u128)
+      price_value * (u64::pow(10, (formatted_decimals - price_decimals) as u8) as u128)
     } else {
-      price_value / (math::pow(10, price_decimals - formatted_decimals) as u128)
+      price_value / (u64::pow(10, (price_decimals - formatted_decimals) as u8) as u128)
     };
     assert!(price_value_formatted > 0 && price_value_formatted < U64_MAX, ERR_BAD_SWITCHBOARD_PRICE);
     let price_value_formatted = (price_value_formatted as u64);
